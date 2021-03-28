@@ -15,7 +15,7 @@ namespace Practico1ADONet
 
             int opcion = -1;
 
-            while (opcion != 6)
+            while (opcion != 5)
             {
                 
                 Console.WriteLine(@"|----------------------------------|");
@@ -36,7 +36,7 @@ namespace Practico1ADONet
             Console.WriteLine("    2 - Buscar Restaurante Por Rut");
             Console.WriteLine("    3 - Borrar Restaurante");
             Console.WriteLine("    4 - Actualizar Restaurante");
-            Console.WriteLine("    6 - Salir");
+            Console.WriteLine("    5 - Salir");
         }
 
         // estructura switch case para opciones de menu segun input 
@@ -71,7 +71,8 @@ namespace Practico1ADONet
             {
                 Restaurante r = new Restaurante();
                 Console.WriteLine("Ingrese el rut del Restaurante: ");
-                r.Rut = Console.ReadLine(); Console.WriteLine("Ingrese la Razon Social del Restaurante: ");
+                r.Rut = Console.ReadLine();
+                Console.WriteLine("Ingrese la Razon Social del Restaurante: ");
                 r.RazonSocial = Console.ReadLine();
                 Console.WriteLine("Ingrese la Calificacion inicial del Restaurante: ");
                 r.SumaCalificacion = int.Parse(Console.ReadLine());
@@ -89,6 +90,19 @@ namespace Practico1ADONet
 
         static void BuscarPorRut()
         {
+            string rut;
+            string msg = "No se encontraron excursiones con esas caracteristicas";
+            Console.WriteLine("Buscar por rut del Restaurante");
+            Console.WriteLine("ingresar rut:");
+            rut = Console.ReadLine();
+            if(rut != "")
+            {
+                List<Restaurante> lista = Restaurante.LeerPorRut(rut);
+                foreach (Restaurante e in lista)
+                {
+                    Console.WriteLine(e.RazonSocial);
+                }
+            }            
         }
 
         static void Borrar()
@@ -187,7 +201,8 @@ namespace Practico1ADONet
             {
                 List<Restaurante> lst = new List<Restaurante>();
                 SqlCommand cmd = new SqlCommand();
-                cmd.CommandType = CommandType.StoredProcedure; 
+            cmd.Parameters.Add(new SqlParameter("@Rut", rut));
+            cmd.CommandType = CommandType.StoredProcedure; 
                 //indico que voy a ejecutar un procedimiento almacenado en la bd 
                 cmd.CommandText = "Restaurantes_SelectByRut"; 
                 //indico el nombre del procedimiento almacenado a ejecutar 
@@ -200,16 +215,11 @@ namespace Practico1ADONet
                 drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
                 while (drResults.Read())
                 {
-
-                string drRut = drResults["Rut"].ToString();
-                if (drRut == rut)
-                {
+                
                     Restaurante r = new Restaurante();
-                    r.Rut = drRut;
+                    r.Rut = drResults["Rut"].ToString();
                     r.RazonSocial = drResults["RazonSocial"].ToString();
                     lst.Add(r);
-                }
-                   
                 }
                 drResults.Close();
                 conn.Close();
