@@ -51,10 +51,10 @@ namespace Practico1ADONet
                     BuscarPorRut();
                     break;
                 case 3:
-                    Borrar();
+                    Actualizar();
                     break;
                 case 4:
-                    Actualizar();
+                    Borrar();
                     break;
                 
                 default:
@@ -97,40 +97,49 @@ namespace Practico1ADONet
             rut = Console.ReadLine();
             if(rut != "")
             {
-                List<Restaurante> lista = Restaurante.LeerPorRut(rut);
-                foreach (Restaurante e in lista)
-                {
-                    Console.WriteLine(e.RazonSocial);
-                }
+                Restaurante rest = Restaurante.LeerPorRut(rut);
+                Console.WriteLine(rest.RazonSocial);
             }            
+        }
+        static void Actualizar()
+        {
+            Restaurante r = new Restaurante();
+            Console.WriteLine("Ingrese el rut del Restaurante para actualizar: ");
+            r.Rut = Console.ReadLine();
+            Console.WriteLine("Ingrese la nueva o actual Razon Social del Restaurante: ");
+            r.RazonSocial = Console.ReadLine();
+            Console.WriteLine("Ingrese la Calificacion nueva o actual del Restaurante: ");
+            r.SumaCalificacion = int.Parse(Console.ReadLine());
+            r.Actualizar();           
         }
 
         static void Borrar()
         {
+            string rut;
+            Console.WriteLine("Borrar Restaurante con este Rut: ");
+            rut = Console.ReadLine();
+            if (rut != "")
+            {
+                Restaurante rest = Restaurante.LeerPorRut(rut); //esto me gustaria hacerlo dentro del metodo de clase pero no se.
+                rest.Borrar();
+                Console.WriteLine(rest.RazonSocial + " ha sido borrado");
+            }
         }
-
-        static void Actualizar()
-        {
-        }
-
-
-
-
-    }
-
-
-
+    }      
 
         public class Restaurante
         {
-            public int RestauranteId { get; set; }
+        #region props
+    
+        public int RestauranteId { get; set; }
             public string Rut { get; set; }
             public string RazonSocial { get; set; }
             public bool Eliminado { get; set; }
             public int SumaCalificacion { get; set; }
             public int CantidadCalificacion { get; set; }
-            
-            public int Guardar()
+
+        #endregion props
+        public int Guardar()
             {
                 string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true"; 
                 //check nombre de servidor, base de datos y usuario de Sqlserver
@@ -197,12 +206,12 @@ namespace Practico1ADONet
                 return lst;
             }
 
-            public static List<Restaurante> LeerPorRut(string rut)
+            public static Restaurante LeerPorRut(string rut)
             {
-                List<Restaurante> lst = new List<Restaurante>();
+                Restaurante rest = new Restaurante();
                 SqlCommand cmd = new SqlCommand();
-            cmd.Parameters.Add(new SqlParameter("@Rut", rut));
-            cmd.CommandType = CommandType.StoredProcedure; 
+                cmd.Parameters.Add(new SqlParameter("@Rut", rut));
+                cmd.CommandType = CommandType.StoredProcedure; 
                 //indico que voy a ejecutar un procedimiento almacenado en la bd 
                 cmd.CommandText = "Restaurantes_SelectByRut"; 
                 //indico el nombre del procedimiento almacenado a ejecutar 
@@ -210,22 +219,94 @@ namespace Practico1ADONet
                 SqlConnection conn = new SqlConnection(sConnectionString);
                 SqlDataReader drResults;
                 cmd.Connection = conn;
-                //cmd.Parameters.Add(new SqlParameter("@Rut", r.Rut));
                 conn.Open();
                 drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
                 while (drResults.Read())
-                {
-                
+                {                
                     Restaurante r = new Restaurante();
                     r.Rut = drResults["Rut"].ToString();
                     r.RazonSocial = drResults["RazonSocial"].ToString();
-                    lst.Add(r);
+                    rest = r;
                 }
                 drResults.Close();
                 conn.Close();
-                return lst;
+                return rest;
             }
+
+        public int Actualizar()
+        {
+            string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            //check nombre de servidor, base de datos y usuario de Sqlserver
+            SqlConnection con = new SqlConnection(config); //configurar la conexion
+
+            int afectadas = 0;// que es afectadas???
+            try
+            {
+                using (SqlCommand cmd = new SqlCommand())
+                {// aca entra cuando le paso la info de consola y hago el llamado
+
+                    cmd.Connection = con;//asignar conexion al commando a ejecutar 
+                    cmd.CommandText = "Restaurantes_Update";//Sentencia a ejecutar, nombre storedProcedure 
+                    cmd.CommandType = CommandType.StoredProcedure;//Tipo de query 
+                    // agregamos parametros  
+                    cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
+                    cmd.Parameters.Add(new SqlParameter("@RazonSocial", this.RazonSocial));
+                    //cmd.Parameters.Add(new SqlParameter("@Eliminado", this.Eliminado));  // esta no se la paso capaz
+                    cmd.Parameters.Add(new SqlParameter("@SumaCalificacion", this.SumaCalificacion));
+                    cmd.Parameters.Add(new SqlParameter("@CantidadCalificacion", this.CantidadCalificacion));
+                    con.Open();//abrimos la conexion 
+                    afectadas = cmd.ExecuteNonQuery();//ejecutamos consulta  // que es afectadas???
+                    con.Close(); //cerramos conexion
+                }// fin using
+            }
+            catch (SqlException ex)
+            {
+                //loguear excepcion
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.InnerException);
+                throw (new Exception("error en acceso a datos", ex));
+            }
+            finally
+            {
+            }
+            return afectadas;
         }
+
+        public void Borrar()
+        {
+            //ExecuteNonQuery
+            string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            //check nombre de servidor, base de datos y usuario de Sqlserver
+            SqlConnection con = new SqlConnection(config); //configurar la conexion
+            int afectadas = 0;// que es afectadas???
+            try
+            {
+                using (SqlCommand cmd = new SqlCommand())
+                {
+                    cmd.Connection = con;//asignar conexion al commando a ejecutar 
+                    cmd.CommandText = "Restaurantes_Delete";//Sentencia a ejecutar, nombre storedProcedure 
+                    cmd.CommandType = CommandType.StoredProcedure;//Tipo de query 
+                    cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
+                    con.Open();//abrimos la conexion 
+                    afectadas = cmd.ExecuteNonQuery();//ejecutamos consulta  // que es afectadas???
+                    con.Close(); //cerramos conexion
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.InnerException);
+                throw (new Exception("error en acceso a datos", ex));
+            }
+            finally
+            {
+
+            }
+
+        }
+
+
+    }
         
         
     }
