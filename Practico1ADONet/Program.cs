@@ -15,7 +15,7 @@ namespace Practico1ADONet
 
             int opcion = -1;
 
-            while (opcion != 5)
+            while (opcion != 6)
             {
                 
                 Console.WriteLine(@"|----------------------------------|");
@@ -34,9 +34,10 @@ namespace Practico1ADONet
         {
             Console.WriteLine("    1 - Crear Restaurante");
             Console.WriteLine("    2 - Buscar Restaurante Por Rut");
-            Console.WriteLine("    3 - Borrar Restaurante");
-            Console.WriteLine("    4 - Actualizar Restaurante");
-            Console.WriteLine("    5 - Salir");
+            Console.WriteLine("    3 - Actualizar Restaurante");
+            Console.WriteLine("    4 - Borrar Restaurante");
+            Console.WriteLine("    5 - Restaurante y Platos por Id");
+            Console.WriteLine("    6 - Salir");
         }
 
         // estructura switch case para opciones de menu segun input 
@@ -56,7 +57,9 @@ namespace Practico1ADONet
                 case 4:
                     Borrar();
                     break;
-                
+                case 5:
+                    BuscarPorId();
+                    break;
                 default:
                     Console.Clear();
                     break;
@@ -65,7 +68,6 @@ namespace Practico1ADONet
 
         static void AltaRestaurante()
         {
-
             // Crear dos Restaurantes con los datos solicitados por pantalla 
             for (int i = 0; i < 2; i++)
             {
@@ -101,6 +103,7 @@ namespace Practico1ADONet
                 Console.WriteLine(rest.RazonSocial);
             }            
         }
+
         static void Actualizar()
         {
             Restaurante r = new Restaurante();
@@ -125,6 +128,21 @@ namespace Practico1ADONet
                 Console.WriteLine(rest.RazonSocial + " ha sido borrado");
             }
         }
+
+
+        static void BuscarPorId()
+        {
+            string rut;
+            string msg = "No se encontraron excursiones con esas caracteristicas";
+            Console.WriteLine("Buscar por rut del Restaurante");
+            Console.WriteLine("ingresar rut:");
+            rut = Console.ReadLine();
+            if (rut != "")
+            {
+                Restaurante rest = Restaurante.LeerPorRut(rut);
+                Console.WriteLine(rest.RazonSocial);
+            }
+        }
     }      
 
         public class Restaurante
@@ -132,11 +150,23 @@ namespace Practico1ADONet
         #region props
     
         public int RestauranteId { get; set; }
-            public string Rut { get; set; }
+        public string NombreFantasia { get; set; }
+        public string Rut { get; set; }
             public string RazonSocial { get; set; }
             public bool Eliminado { get; set; }
             public int SumaCalificacion { get; set; }
             public int CantidadCalificacion { get; set; }
+        public virtual List<Plato> Menu { get; set; }
+
+        public void agregarPlato(Plato p)
+        {
+            Menu.Add(p); // definir este metodo creo.
+        }
+        public Restaurante()
+        {
+            Menu = new List<Plato>();
+        }
+
 
         #endregion props
         public int Guardar()
@@ -144,7 +174,6 @@ namespace Practico1ADONet
                 string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true"; 
                 //check nombre de servidor, base de datos y usuario de Sqlserver
                 SqlConnection con = new SqlConnection(config); //configurar la conexion
-
                 int afectadas = 0;
                 try
                 {
@@ -181,8 +210,66 @@ namespace Practico1ADONet
                 return afectadas;
             }
 
+        public int GuardarConPlato()
+        {
+            string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            //check nombre de servidor, base de datos y usuario de Sqlserver
+            SqlConnection con = new SqlConnection(config); //configurar la conexion
+            SqlTransaction trn = null;
+            int afectadas = 0;
+            try
+            {
+                using (SqlCommand cmd = new SqlCommand())
+                {// aca entra cuando le paso la info de consola y hago el llamado
 
-            public static List<Restaurante> LeerTodos()
+                    cmd.Connection = con;//asignar conexion al commando a ejecutar 
+
+                    cmd.CommandText = "Restaurantes_Insert";//Sentencia a ejecutar, nombre storedProcedure 
+
+                    cmd.CommandType = CommandType.StoredProcedure;//Tipo de query 
+                                                                  // agregamos parametros 
+                    cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
+                    cmd.Parameters.Add(new SqlParameter("@RazonSocial", this.RazonSocial));
+
+                    cmd.Parameters.Add(new SqlParameter("@Eliminado", this.Eliminado));
+                    cmd.Parameters.Add(new SqlParameter("@SumaCalificacion", this.SumaCalificacion));
+                    cmd.Parameters.Add(new SqlParameter("@CantidadCalificacion", this.CantidadCalificacion));
+                    con.Open();//abrimos la conexion 
+                    trn = con.BeginTransaction(); // iniciamos la transaccion
+                    cmd.Transaction = trn; //la asociamos al comando
+                    //usamos executescaler ya que nos devuelve el id generado
+                    this.RestauranteId = (int)cmd.ExecuteScalar();//casteamos retorno
+                    //sobreescribimos la consula a ejecutar para reutilizar el objeto command
+                    cmd.CommandText = "Platos Insert";
+                    foreach (Plato p in this.Menu)
+                    { //recorremos los platos asociados 
+                        cmd.Parameters.Clear(); //limpiamos parámetros de la consulta anterior 
+                        cmd.Parameters.Add(new SqlParameter("@Nombre", p.Descripcion));
+                        cmd.Parameters.Add(new SqlParameter("@Descripcion", p.Descripcion));
+                        cmd.Parameters.Add(new SqlParameter("@Precio", p.Precio));
+                        cmd.Parameters.Add(new SqlParameter("@RestauranteId", this.RestauranteId));
+                        afectadas = cmd.ExecuteNonQuery();//ejecutamos consulta 
+                    }
+                    trn.Commit(); // confirmamos la transaccion y las modificaciones  
+                }// fin using
+            }
+            catch (SqlException ex)
+            {
+                //si hay error deshacemos los cambios y volvemos a la situacion inicial
+                trn.Rollback();
+            }
+            finally
+            {
+                if(con.State == ConnectionState.Open)
+                    con.Close(); //cerramos conexion
+            }
+            return afectadas;
+        }
+
+
+
+
+        public static List<Restaurante> LeerTodos()
             {
                 List<Restaurante> lst = new List<Restaurante>();
                 SqlCommand cmd = new SqlCommand();
@@ -232,6 +319,7 @@ namespace Practico1ADONet
                 conn.Close();
                 return rest;
             }
+        
 
         public int Actualizar()
         {
@@ -251,7 +339,7 @@ namespace Practico1ADONet
                     // agregamos parametros  
                     cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
                     cmd.Parameters.Add(new SqlParameter("@RazonSocial", this.RazonSocial));
-                    //cmd.Parameters.Add(new SqlParameter("@Eliminado", this.Eliminado));  // esta no se la paso capaz
+                    cmd.Parameters.Add(new SqlParameter("@Eliminado", this.Eliminado));  // esta no se la paso capaz
                     cmd.Parameters.Add(new SqlParameter("@SumaCalificacion", this.SumaCalificacion));
                     cmd.Parameters.Add(new SqlParameter("@CantidadCalificacion", this.CantidadCalificacion));
                     con.Open();//abrimos la conexion 
@@ -286,7 +374,7 @@ namespace Practico1ADONet
                     cmd.Connection = con;//asignar conexion al commando a ejecutar 
                     cmd.CommandText = "Restaurantes_Delete";//Sentencia a ejecutar, nombre storedProcedure 
                     cmd.CommandType = CommandType.StoredProcedure;//Tipo de query 
-                    cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
+                    cmd.Parameters.Add(new SqlParameter("@rut", this.Rut));
                     con.Open();//abrimos la conexion 
                     afectadas = cmd.ExecuteNonQuery();//ejecutamos consulta  // que es afectadas???
                     con.Close(); //cerramos conexion
@@ -305,11 +393,44 @@ namespace Practico1ADONet
 
         }
 
+        public static Restaurante BuscarPorId(string rut)
+        {
+            Restaurante rest = new Restaurante();
+            SqlCommand cmd = new SqlCommand();
+            cmd.Parameters.Add(new SqlParameter("@Rut", rut));
+            cmd.CommandType = CommandType.StoredProcedure;
+            //indico que voy a ejecutar un procedimiento almacenado en la bd 
+            cmd.CommandText = "Restaurantes_SelectById";
+            //indico el nombre del procedimiento almacenado a ejecutar 
+            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            SqlConnection conn = new SqlConnection(sConnectionString);
+            SqlDataReader drResults;
+            cmd.Connection = conn;
+            conn.Open();
+            drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            while (drResults.Read())
+            {
+                Restaurante r = new Restaurante();
+                r.Rut = drResults["Rut"].ToString();
+                r.RazonSocial = drResults["RazonSocial"].ToString();
+                rest = r;
+            }
+            drResults.Close();
+            conn.Close();
+            return rest;
+        }
+    }
 
+    public class Plato
+    {
+        public int PlatoId { get; set; }
+        public string Nombre { get; set; }
+        public string Descripcion { get; set; }
+        public decimal Precio { get; set; }
+        public virtual Restaurante ElRestaurante { get; set; }
     }
-        
-        
-    }
+
+}
 
 
 
