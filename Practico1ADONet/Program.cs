@@ -15,9 +15,9 @@ namespace Practico1ADONet
 
             int opcion = -1;
 
-            while (opcion != 6)
+            while (opcion != 7)
             {
-                
+
                 Console.WriteLine(@"|----------------------------------|");
                 Console.WriteLine("|       Seleccione una opcion      |");
                 Console.WriteLine(@"|----------------------------------|");
@@ -36,8 +36,9 @@ namespace Practico1ADONet
             Console.WriteLine("    2 - Buscar Restaurante Por Rut");
             Console.WriteLine("    3 - Actualizar Restaurante");
             Console.WriteLine("    4 - Borrar Restaurante");
-            Console.WriteLine("    5 - Restaurante y Platos por Id");
-            Console.WriteLine("    6 - Salir");
+            Console.WriteLine("    5 - Crear Restaurante con Platos");
+            Console.WriteLine("    6 - Restaurante y Platos por Id");
+            Console.WriteLine("    7 - Salir");
         }
 
         // estructura switch case para opciones de menu segun input 
@@ -58,6 +59,9 @@ namespace Practico1ADONet
                     Borrar();
                     break;
                 case 5:
+                    GuardarConPlato();
+                    break;
+                case 6:
                     BuscarPorId();
                     break;
                 default:
@@ -90,18 +94,60 @@ namespace Practico1ADONet
             }
         }
 
+        static void GuardarConPlato()
+        {
+            // Crear Restaurante con dos platos
+            Restaurante r = new Restaurante();
+            Console.WriteLine("Ingrese el rut del Restaurante: ");
+            r.Rut = Console.ReadLine();
+            Console.WriteLine("Ingrese la Razon Social del Restaurante: ");
+            r.RazonSocial = Console.ReadLine();
+            Console.WriteLine("Ingrese la Calificacion inicial del Restaurante: ");
+            r.SumaCalificacion = int.Parse(Console.ReadLine());
+            r.CantidadCalificacion = 1;
+            Plato p = new Plato();
+            Console.WriteLine("Ingrese el nombre de un plato: ");
+            p.Nombre = Console.ReadLine();
+            Console.WriteLine(" Ingrese la descripcion de un plato: ");
+            p.Descripcion = Console.ReadLine();
+            Console.WriteLine("Ingrese el precio del plato: ");
+            p.Precio = decimal.Parse(Console.ReadLine());
+            r.agregarPlato(p);
+            Plato p2 = new Plato();
+            Console.WriteLine("Ingrese el nombre de un plato:");
+            p2.Nombre = Console.ReadLine();
+            Console.WriteLine("Ingrese la descripcion de un plato:  ");
+            p2.Descripcion = Console.ReadLine();
+            Console.WriteLine(" Ingrese el precio del plato: ");
+            p2.Precio = decimal.Parse(Console.ReadLine());
+            r.agregarPlato(p2);
+            r.GuardarConPlato(); //guardar el restaurante y su menu 
+                                 //consultar un restaurante y su menu 
+            Restaurante r2 = new Restaurante();
+            Console.WriteLine("Ingrese el Id de un restaurante");
+            r2.RestauranteId = int.Parse(Console.ReadLine());
+            r2.LeerConPlato();
+            Console.WriteLine(r2.RazonSocial);
+            Console.WriteLine("Menu: ");
+            foreach (Plato a in r2.Menu)
+            {
+                Console.WriteLine(a.Nombre + " - $ " + a.Precio.ToString());
+            }
+            Console.ReadLine();
+        }
+
         static void BuscarPorRut()
         {
             string rut;
-            string msg = "No se encontraron excursiones con esas caracteristicas";
+            string msg = "No se encontraron excursiones con esas caracteristicas"; //no estoy mostrando error aun
             Console.WriteLine("Buscar por rut del Restaurante");
             Console.WriteLine("ingresar rut:");
             rut = Console.ReadLine();
-            if(rut != "")
+            if (rut != "")
             {
                 Restaurante rest = Restaurante.LeerPorRut(rut);
                 Console.WriteLine(rest.RazonSocial);
-            }            
+            }
         }
 
         static void Actualizar()
@@ -113,7 +159,7 @@ namespace Practico1ADONet
             r.RazonSocial = Console.ReadLine();
             Console.WriteLine("Ingrese la Calificacion nueva o actual del Restaurante: ");
             r.SumaCalificacion = int.Parse(Console.ReadLine());
-            r.Actualizar();           
+            r.Actualizar();
         }
 
         static void Borrar()
@@ -143,19 +189,19 @@ namespace Practico1ADONet
                 Console.WriteLine(rest.RazonSocial);
             }
         }
-    }      
+    }
 
-        public class Restaurante
-        {
+    public class Restaurante
+    {
         #region props
-    
+
         public int RestauranteId { get; set; }
         public string NombreFantasia { get; set; }
         public string Rut { get; set; }
-            public string RazonSocial { get; set; }
-            public bool Eliminado { get; set; }
-            public int SumaCalificacion { get; set; }
-            public int CantidadCalificacion { get; set; }
+        public string RazonSocial { get; set; }
+        public bool Eliminado { get; set; }
+        public int SumaCalificacion { get; set; }
+        public int CantidadCalificacion { get; set; }
         public virtual List<Plato> Menu { get; set; }
 
         public void agregarPlato(Plato p)
@@ -170,45 +216,45 @@ namespace Practico1ADONet
 
         #endregion props
         public int Guardar()
+        {
+            string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            //check nombre de servidor, base de datos y usuario de Sqlserver
+            SqlConnection con = new SqlConnection(config); //configurar la conexion
+            int afectadas = 0;
+            try
             {
-                string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true"; 
-                //check nombre de servidor, base de datos y usuario de Sqlserver
-                SqlConnection con = new SqlConnection(config); //configurar la conexion
-                int afectadas = 0;
-                try
-                {
-                    using (SqlCommand cmd = new SqlCommand())
-                    {// aca entra cuando le paso la info de consola y hago el llamado
+                using (SqlCommand cmd = new SqlCommand())
+                {// aca entra cuando le paso la info de consola y hago el llamado
 
-                        cmd.Connection = con;//asignar conexion al commando a ejecutar 
+                    cmd.Connection = con;//asignar conexion al commando a ejecutar 
 
-                        cmd.CommandText = "Restaurantes_Insert";//Sentencia a ejecutar, nombre storedProcedure 
+                    cmd.CommandText = "Restaurantes_Insert";//Sentencia a ejecutar, nombre storedProcedure 
 
-                        cmd.CommandType = CommandType.StoredProcedure;//Tipo de query 
-                                                                      // agregamos parametros 
-                        cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
-                        cmd.Parameters.Add(new SqlParameter("@RazonSocial", this.RazonSocial));
+                    cmd.CommandType = CommandType.StoredProcedure;//Tipo de query 
+                                                                  // agregamos parametros 
+                    cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
+                    cmd.Parameters.Add(new SqlParameter("@RazonSocial", this.RazonSocial));
 
-                        cmd.Parameters.Add(new SqlParameter("@Eliminado", this.Eliminado));
-                        cmd.Parameters.Add(new SqlParameter("@SumaCalificacion", this.SumaCalificacion));
-                        cmd.Parameters.Add(new SqlParameter("@CantidadCalificacion", this.CantidadCalificacion));
-                        con.Open();//abrimos la conexion 
-                        afectadas = cmd.ExecuteNonQuery();//ejecutamos consulta 
-                        con.Close(); //cerramos conexion
-                    }// fin using
-                }
-                catch (SqlException ex)
-                {
-                    //loguear excepcion
-                    Console.WriteLine(ex.Message);
-                    Console.WriteLine(ex.InnerException);
-                    throw (new Exception("error en acceso a datos",ex));
-                }
-                finally
-                {
-                }
-                return afectadas;
+                    cmd.Parameters.Add(new SqlParameter("@Eliminado", this.Eliminado));
+                    cmd.Parameters.Add(new SqlParameter("@SumaCalificacion", this.SumaCalificacion));
+                    cmd.Parameters.Add(new SqlParameter("@CantidadCalificacion", this.CantidadCalificacion));
+                    con.Open();//abrimos la conexion 
+                    afectadas = cmd.ExecuteNonQuery();//ejecutamos consulta 
+                    con.Close(); //cerramos conexion
+                }// fin using
             }
+            catch (SqlException ex)
+            {
+                //loguear excepcion
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.InnerException);
+                throw (new Exception("error en acceso a datos", ex));
+            }
+            finally
+            {
+            }
+            return afectadas;
+        }
 
         public int GuardarConPlato()
         {
@@ -237,9 +283,9 @@ namespace Practico1ADONet
                     con.Open();//abrimos la conexion 
                     trn = con.BeginTransaction(); // iniciamos la transaccion
                     cmd.Transaction = trn; //la asociamos al comando
-                    //usamos executescaler ya que nos devuelve el id generado
+                                           //usamos executescaler ya que nos devuelve el id generado
                     this.RestauranteId = (int)cmd.ExecuteScalar();//casteamos retorno
-                    //sobreescribimos la consula a ejecutar para reutilizar el objeto command
+                                                                  //sobreescribimos la consula a ejecutar para reutilizar el objeto command
                     cmd.CommandText = "Platos Insert";
                     foreach (Plato p in this.Menu)
                     { //recorremos los platos asociados 
@@ -260,7 +306,7 @@ namespace Practico1ADONet
             }
             finally
             {
-                if(con.State == ConnectionState.Open)
+                if (con.State == ConnectionState.Open)
                     con.Close(); //cerramos conexion
             }
             return afectadas;
@@ -268,58 +314,94 @@ namespace Practico1ADONet
 
 
 
-
         public static List<Restaurante> LeerTodos()
+        {
+            List<Restaurante> lst = new List<Restaurante>();
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure; //indico que voy a ejecutar un procedimiento almacenado en la bd 
+            cmd.CommandText = "Restaurantes_SelectAll"; //indico el nombre del procedimiento almacenado a ejecutar 
+            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            SqlConnection conn = new SqlConnection(sConnectionString);
+            SqlDataReader drResults;
+            cmd.Connection = conn;
+            conn.Open();
+            drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            while (drResults.Read())
             {
-                List<Restaurante> lst = new List<Restaurante>();
-                SqlCommand cmd = new SqlCommand();
-                cmd.CommandType = CommandType.StoredProcedure; //indico que voy a ejecutar un procedimiento almacenado en la bd 
-                cmd.CommandText = "Restaurantes_SelectAll"; //indico el nombre del procedimiento almacenado a ejecutar 
-                string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
-                SqlConnection conn = new SqlConnection(sConnectionString);
-                SqlDataReader drResults;
-                cmd.Connection = conn;
-                conn.Open();
-                drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+                Restaurante r = new Restaurante();
+                r.Rut = drResults["Rut"].ToString();
+                r.RazonSocial = drResults["RazonSocial"].ToString();
+                lst.Add(r);
+            }
+            drResults.Close();
+            conn.Close();
+            return lst;
+        }
+
+        public static Restaurante LeerPorRut(string rut)
+        {
+            Restaurante rest = new Restaurante();
+            SqlCommand cmd = new SqlCommand();
+            cmd.Parameters.Add(new SqlParameter("@Rut", rut));
+            cmd.CommandType = CommandType.StoredProcedure;
+            //indico que voy a ejecutar un procedimiento almacenado en la bd 
+            cmd.CommandText = "Restaurantes_SelectByRut";
+            //indico el nombre del procedimiento almacenado a ejecutar 
+            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            SqlConnection conn = new SqlConnection(sConnectionString);
+            SqlDataReader drResults;
+            cmd.Connection = conn;
+            conn.Open();
+            drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+            while (drResults.Read())
+            {
+                Restaurante r = new Restaurante();
+                r.Rut = drResults["Rut"].ToString();
+                r.RazonSocial = drResults["RazonSocial"].ToString();
+                rest = r;
+            }
+            drResults.Close();
+            conn.Close();
+            return rest;
+        }
+
+        public bool LeerConPlato()
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandType = CommandType.StoredProcedure;
+            //indico que voy a ejecutar un procedimiento almacenado en la bd 
+            cmd.CommandText = "Restaurantes_SelectByID"; //indico el procedimiento 
+            string sConnectionString = @"Server=.\SQLEXPRESS;DataBase=Fameliques;Trusted_connection=true;";
+            SqlConnection conn = new SqlConnection(sConnectionString);
+            bool retorno = false;
+            SqlDataReader drResults;
+            cmd.Connection = conn;
+            cmd.Parameters.Add(new SqlParameter("@RestauranteId", this.RestauranteId));
+            conn.Open(); // login failed error. me pide el id al agregar, se deberia hacer por atras.
+            drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+            if (drResults.Read())
+            {
+                retorno = true;
+                this.Rut = drResults["Rut"].ToString();
+                this.RazonSocial = drResults["RazonSocial"].ToString();
+                drResults.NextResult();
                 while (drResults.Read())
                 {
-                    Restaurante r = new Restaurante();
-                    r.Rut = drResults["Rut"].ToString();
-                    r.RazonSocial = drResults["RazonSocial"].ToString();
-                    lst.Add(r);
+                    Plato p = new Plato();
+                    p.Descripcion = drResults["Descripcion"].ToString();
+                    p.Nombre = drResults["Nombre"].ToString();
+                    p.PlatoId = int.Parse(drResults["PlatoId"].ToString());
+                    p.Precio = decimal.Parse(drResults["Precio"].ToString());
+                    p.ElRestaurante = this;
+                    this.Menu.Add(p);
                 }
-                drResults.Close();
-                conn.Close();
-                return lst;
             }
+            drResults.Close();
+            conn.Close();
+            return retorno;
+        }
 
-            public static Restaurante LeerPorRut(string rut)
-            {
-                Restaurante rest = new Restaurante();
-                SqlCommand cmd = new SqlCommand();
-                cmd.Parameters.Add(new SqlParameter("@Rut", rut));
-                cmd.CommandType = CommandType.StoredProcedure; 
-                //indico que voy a ejecutar un procedimiento almacenado en la bd 
-                cmd.CommandText = "Restaurantes_SelectByRut"; 
-                //indico el nombre del procedimiento almacenado a ejecutar 
-                string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
-                SqlConnection conn = new SqlConnection(sConnectionString);
-                SqlDataReader drResults;
-                cmd.Connection = conn;
-                conn.Open();
-                drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
-                while (drResults.Read())
-                {                
-                    Restaurante r = new Restaurante();
-                    r.Rut = drResults["Rut"].ToString();
-                    r.RazonSocial = drResults["RazonSocial"].ToString();
-                    rest = r;
-                }
-                drResults.Close();
-                conn.Close();
-                return rest;
-            }
-        
 
         public int Actualizar()
         {
@@ -336,7 +418,7 @@ namespace Practico1ADONet
                     cmd.Connection = con;//asignar conexion al commando a ejecutar 
                     cmd.CommandText = "Restaurantes_Update";//Sentencia a ejecutar, nombre storedProcedure 
                     cmd.CommandType = CommandType.StoredProcedure;//Tipo de query 
-                    // agregamos parametros  
+                                                                  // agregamos parametros  
                     cmd.Parameters.Add(new SqlParameter("@Rut", this.Rut));
                     cmd.Parameters.Add(new SqlParameter("@RazonSocial", this.RazonSocial));
                     cmd.Parameters.Add(new SqlParameter("@Eliminado", this.Eliminado));  // esta no se la paso capaz
