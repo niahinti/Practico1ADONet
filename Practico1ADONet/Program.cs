@@ -12,12 +12,10 @@ namespace Practico1ADONet
     {
         static void Main(string[] args)
         {
-
             int opcion = -1;
 
-            while (opcion != 7)
+            while (opcion != 8)
             {
-
                 Console.WriteLine(@"|----------------------------------|");
                 Console.WriteLine("|       Seleccione una opcion      |");
                 Console.WriteLine(@"|----------------------------------|");
@@ -26,7 +24,6 @@ namespace Practico1ADONet
 
                 int.TryParse(Console.ReadLine(), out opcion);
                 MenuOpciones(opcion);
-
             }
         }
 
@@ -34,11 +31,12 @@ namespace Practico1ADONet
         {
             Console.WriteLine("    1 - Crear Restaurante");
             Console.WriteLine("    2 - Buscar Restaurante Por Rut");
-            Console.WriteLine("    3 - Actualizar Restaurante");
-            Console.WriteLine("    4 - Borrar Restaurante");
-            Console.WriteLine("    5 - Crear Restaurante con Platos");
-            Console.WriteLine("    6 - Restaurante y Platos por Id");
-            Console.WriteLine("    7 - Salir");
+            Console.WriteLine("    3 - Listar Todos los Restaurantes");
+            Console.WriteLine("    4 - Actualizar Restaurante");
+            Console.WriteLine("    5 - Borrar Restaurante");
+            Console.WriteLine("    6 - Crear Restaurante con Platos");
+            Console.WriteLine("    7 - Restaurante y Platos por Id");
+            Console.WriteLine("    8 - Salir");
         }
 
         // estructura switch case para opciones de menu segun input 
@@ -53,15 +51,18 @@ namespace Practico1ADONet
                     BuscarPorRut();
                     break;
                 case 3:
-                    Actualizar();
+                    LeerTodos();
                     break;
                 case 4:
-                    Borrar();
+                    Actualizar();
                     break;
                 case 5:
-                    GuardarConPlato();
+                    Borrar();
                     break;
                 case 6:
+                    GuardarConPlato();
+                    break;
+                case 7:
                     BuscarPorId();
                     break;
                 default:
@@ -87,13 +88,18 @@ namespace Practico1ADONet
             }
             Console.ReadLine();
 
-            List<Restaurante> lista = Restaurante.LeerTodos();
-            foreach (Restaurante e in lista)
-            {
-                Console.WriteLine(e.RazonSocial);
-            }
+            LeerTodos();
         }
 
+        static void LeerTodos()
+        {
+            Restaurante r = new Restaurante();
+            List<Restaurante> lista = Restaurante.LeerTodos();
+            foreach (Restaurante rest in lista)
+            {
+                Console.WriteLine(rest.Rut + " - " + rest.RazonSocial);
+            }
+        }
         static void GuardarConPlato()
         {
             // Crear Restaurante con dos platos
@@ -122,14 +128,11 @@ namespace Practico1ADONet
             p2.Precio = decimal.Parse(Console.ReadLine());
             r.agregarPlato(p2);
             r.GuardarConPlato(); //guardar el restaurante y su menu 
-                                 //consultar un restaurante y su menu 
-            Restaurante r2 = new Restaurante();
-            Console.WriteLine("Ingrese el Id de un restaurante");
-            r2.RestauranteId = int.Parse(Console.ReadLine());
-            r2.LeerConPlato();
-            Console.WriteLine(r2.RazonSocial);
+                                 //consultar un restaurante y su menu             
+            r.LeerConPlato();
+            Console.WriteLine(r.RazonSocial);
             Console.WriteLine("Menu: ");
-            foreach (Plato a in r2.Menu)
+            foreach (Plato a in r.Menu)
             {
                 Console.WriteLine(a.Nombre + " - $ " + a.Precio.ToString());
             }
@@ -139,7 +142,7 @@ namespace Practico1ADONet
         static void BuscarPorRut()
         {
             string rut;
-            string msg = "No se encontraron excursiones con esas caracteristicas"; //no estoy mostrando error aun
+            string msg = "No se encontraron restaurantes con ese id"; //no estoy mostrando error aun
             Console.WriteLine("Buscar por rut del Restaurante");
             Console.WriteLine("ingresar rut:");
             rut = Console.ReadLine();
@@ -174,20 +177,21 @@ namespace Practico1ADONet
                 Console.WriteLine(rest.RazonSocial + " ha sido borrado");
             }
         }
-
-
+        
         static void BuscarPorId()
         {
-            string rut;
-            string msg = "No se encontraron excursiones con esas caracteristicas";
-            Console.WriteLine("Buscar por rut del Restaurante");
-            Console.WriteLine("ingresar rut:");
-            rut = Console.ReadLine();
-            if (rut != "")
-            {
-                Restaurante rest = Restaurante.LeerPorRut(rut);
-                Console.WriteLine(rest.RazonSocial);
+            Restaurante r = new Restaurante();
+            string msg = "No se encontraron restaurantes con ese id"; //no implementado
+            Console.WriteLine("Buscar por id del Restaurante");
+            Console.WriteLine("ingresar id:");
+            r.RestauranteId = int.Parse(Console.ReadLine());            
+            r.LeerConPlato();
+            Console.WriteLine(r.RazonSocial);
+            Console.WriteLine(" Menu: ");
+            foreach (Plato a in r.Menu ){
+                Console.WriteLine(a.Nombre + " - $ " + a.Precio.ToString());
             }
+            Console.ReadLine();
         }
     }
 
@@ -286,7 +290,7 @@ namespace Practico1ADONet
                                            //usamos executescaler ya que nos devuelve el id generado
                     this.RestauranteId = (int)cmd.ExecuteScalar();//casteamos retorno
                                                                   //sobreescribimos la consula a ejecutar para reutilizar el objeto command
-                    cmd.CommandText = "Platos Insert";
+                    cmd.CommandText = "Platos_Insert";
                     foreach (Plato p in this.Menu)
                     { //recorremos los platos asociados 
                         cmd.Parameters.Clear(); //limpiamos parámetros de la consulta anterior 
@@ -311,16 +315,14 @@ namespace Practico1ADONet
             }
             return afectadas;
         }
-
-
-
+               
         public static List<Restaurante> LeerTodos()
         {
             List<Restaurante> lst = new List<Restaurante>();
             SqlCommand cmd = new SqlCommand();
             cmd.CommandType = CommandType.StoredProcedure; //indico que voy a ejecutar un procedimiento almacenado en la bd 
             cmd.CommandText = "Restaurantes_SelectAll"; //indico el nombre del procedimiento almacenado a ejecutar 
-            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true;";
             SqlConnection conn = new SqlConnection(sConnectionString);
             SqlDataReader drResults;
             cmd.Connection = conn;
@@ -347,7 +349,7 @@ namespace Practico1ADONet
             //indico que voy a ejecutar un procedimiento almacenado en la bd 
             cmd.CommandText = "Restaurantes_SelectByRut";
             //indico el nombre del procedimiento almacenado a ejecutar 
-            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true;";
             SqlConnection conn = new SqlConnection(sConnectionString);
             SqlDataReader drResults;
             cmd.Connection = conn;
@@ -365,15 +367,15 @@ namespace Practico1ADONet
             return rest;
         }
 
-        public bool LeerConPlato()
+        public Restaurante LeerConPlato()
         {
-            SqlCommand cmd = new SqlCommand();
+            SqlCommand cmd = new SqlCommand(); 
             cmd.CommandType = CommandType.StoredProcedure;
             //indico que voy a ejecutar un procedimiento almacenado en la bd 
             cmd.CommandText = "Restaurantes_SelectByID"; //indico el procedimiento 
-            string sConnectionString = @"Server=.\SQLEXPRESS;DataBase=Fameliques;Trusted_connection=true;";
+            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true;";
             SqlConnection conn = new SqlConnection(sConnectionString);
-            bool retorno = false;
+            Restaurante retorno = null;
             SqlDataReader drResults;
             cmd.Connection = conn;
             cmd.Parameters.Add(new SqlParameter("@RestauranteId", this.RestauranteId));
@@ -382,7 +384,7 @@ namespace Practico1ADONet
 
             if (drResults.Read())
             {
-                retorno = true;
+                retorno = this;
                 this.Rut = drResults["Rut"].ToString();
                 this.RazonSocial = drResults["RazonSocial"].ToString();
                 drResults.NextResult();
@@ -403,9 +405,47 @@ namespace Practico1ADONet
         }
 
 
+        //public bool LeerConPlato2() //version del pdf
+        //{
+        //    SqlCommand cmd = new SqlCommand();
+        //    cmd.CommandType = CommandType.StoredProcedure;
+        //    //indico que voy a ejecutar un procedimiento almacenado en la bd 
+        //    cmd.CommandText = "Restaurantes_SelectByID"; //indico el procedimiento 
+        //    string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true;";
+        //    SqlConnection conn = new SqlConnection(sConnectionString);
+        //    bool retorno = false;
+        //    SqlDataReader drResults;
+        //    cmd.Connection = conn;
+        //    cmd.Parameters.Add(new SqlParameter("@RestauranteId", this.RestauranteId));
+        //    conn.Open(); // login failed error. me pide el id al agregar, se deberia hacer por atras.
+        //    drResults = cmd.ExecuteReader(CommandBehavior.CloseConnection);
+
+        //    if (drResults.Read())
+        //    {
+        //        retorno = true;
+        //        this.Rut = drResults["Rut"].ToString();
+        //        this.RazonSocial = drResults["RazonSocial"].ToString();
+        //        drResults.NextResult();
+        //        while (drResults.Read())
+        //        {
+        //            Plato p = new Plato();
+        //            p.Descripcion = drResults["Descripcion"].ToString();
+        //            p.Nombre = drResults["Nombre"].ToString();
+        //            p.PlatoId = int.Parse(drResults["PlatoId"].ToString());
+        //            p.Precio = decimal.Parse(drResults["Precio"].ToString());
+        //            p.ElRestaurante = this;
+        //            this.Menu.Add(p);
+        //        }
+        //    }
+        //    drResults.Close();
+        //    conn.Close();
+        //    return retorno;
+        //}
+
+
         public int Actualizar()
         {
-            string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            string config = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true;";
             //check nombre de servidor, base de datos y usuario de Sqlserver
             SqlConnection con = new SqlConnection(config); //configurar la conexion
 
@@ -484,7 +524,7 @@ namespace Practico1ADONet
             //indico que voy a ejecutar un procedimiento almacenado en la bd 
             cmd.CommandText = "Restaurantes_SelectById";
             //indico el nombre del procedimiento almacenado a ejecutar 
-            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true";
+            string sConnectionString = @"Server=(localdb)\ProjectsV13;DataBase=Fameliques;Integrated Security=true;";
             SqlConnection conn = new SqlConnection(sConnectionString);
             SqlDataReader drResults;
             cmd.Connection = conn;
